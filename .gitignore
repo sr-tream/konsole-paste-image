@@ -1,2 +1,9 @@
 build/
 konsole-src/
+
+# makepkg artifacts
+src/
+pkg/
+*.pkg.tar.*
+*.log
+konsole-paste-image/

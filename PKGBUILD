@@ -1,7 +1,7 @@
 # Maintainer: sr_team <sr_team@sr.team>
 
 pkgname=konsole-paste-image
-pkgver=0
+pkgver=26.04.1
 pkgrel=1
 pkgdesc='Konsole plugin: Ctrl+V pastes clipboard images as hashed /tmp paths (bracketed-paste aware); Ctrl+Shift+V sends literal ^V'
 arch=('x86_64' 'x86_64_v3' 'x86_64_v4' 'aarch64' 'armv7h' 'armv6h' 'riscv64')
@@ -40,4 +40,5 @@ build() {
 package() {
     cd "${srcdir}/${pkgname}"
     DESTDIR="${pkgdir}" cmake --install build
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 }
