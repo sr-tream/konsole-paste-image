@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "konsole_pasteimageplugin",
+        "Name": "Paste Image as Path",
+        "Description": "When clipboard contains an image, Ctrl+V saves it to /tmp and pastes the file path into the terminal.",
+        "Authors": [
+            { "Name": "sr_team", "Email": "sr_team@sr.team" }
+        ],
+        "License": "MIT",
+        "Version": "26.04.1",
+        "EnabledByDefault": true,
+        "Category": "Utilities"
+    }
+}
