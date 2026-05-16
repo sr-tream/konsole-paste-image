@@ -23,10 +23,21 @@ can be rebound.
 
 ## Install (Arch / CachyOS)
 
+The `PKGBUILD`'s `source=` already fetches the repo via `git+`, so you only
+need the PKGBUILD locally — no need to clone twice:
+
 ```sh
-git clone https://github.com/sr-tream/konsole-paste-image.git
-cd konsole-paste-image
+mkdir konsole-paste-image && cd konsole-paste-image
+curl -O https://raw.githubusercontent.com/sr-tream/konsole-paste-image/main/PKGBUILD
 makepkg -si
+```
+
+(`wget` works just as well in place of `curl -O`.)
+
+Or install the prebuilt package straight from the GitHub release:
+
+```sh
+# pacman -U https://github.com/sr-tream/konsole-paste-image/releases/latest/download/konsole-paste-image-26.04.1-1-x86_64.pkg.tar.zst
 ```
 
 The `PKGBUILD`'s `pkgver()` pins the package to the Konsole release
