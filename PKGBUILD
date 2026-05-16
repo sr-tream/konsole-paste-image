@@ -19,18 +19,17 @@ pkgver() {
     LANG=C pacman -Si konsole | awk -F': +' '/^Version/ {print $2; exit}' | cut -d- -f1
 }
 
-prepare() {
-    cd "${srcdir}/${pkgname}"
-    # Konsole's plugin headers (IKonsolePlugin.h, MainWindow.h, ...) are not
-    # shipped by the konsole package; clone the matching release tag for them.
-    git clone --depth=1 --branch "v${pkgver}" \
-        https://invent.kde.org/utilities/konsole.git konsole-src
-    sed -i "s/\"Version\": \"[^\"]*\"/\"Version\": \"${pkgver}\"/" \
-        konsole_pasteimageplugin.json
-}
-
 build() {
     cd "${srcdir}/${pkgname}"
+    # pkgver() runs AFTER prepare(), so the konsole source clone and the
+    # plugin-metadata version rewrite both have to happen here.
+    if [[ ! -d konsole-src ]]; then
+        git clone --depth=1 --branch "v${pkgver}" \
+            https://invent.kde.org/utilities/konsole.git konsole-src
+    fi
+    sed -i "s/\"Version\": \"[^\"]*\"/\"Version\": \"${pkgver}\"/" \
+        konsole_pasteimageplugin.json
+
     cmake -B build -S . \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
