@@ -1,0 +1,44 @@
+# Maintainer: sr_team <sr_team@sr.team>
+
+pkgname=konsole-paste-image
+pkgver=0
+pkgrel=1
+pkgdesc='Konsole plugin: Ctrl+V pastes clipboard images as hashed /tmp paths (bracketed-paste aware); Ctrl+Shift+V sends literal ^V'
+arch=('x86_64' 'x86_64_v3' 'x86_64_v4' 'aarch64' 'armv7h' 'armv6h' 'riscv64')
+url='https://github.com/sr-tream/konsole-paste-image'
+license=('MIT')
+depends=('konsole' 'qt6-base' 'kcoreaddons' 'ki18n' 'kxmlgui')
+makedepends=('cmake' 'extra-cmake-modules' 'git')
+source=("git+${url}.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    # Mirror the konsole release in [extra] so PluginManager's strict
+    # version check (first 5 chars of "Version" must equal Konsole's
+    # RELEASE_SERVICE_VERSION) passes on install.
+    LANG=C pacman -Si konsole | awk -F': +' '/^Version/ {print $2; exit}' | cut -d- -f1
+}
+
+prepare() {
+    cd "${srcdir}/${pkgname}"
+    # Konsole's plugin headers (IKonsolePlugin.h, MainWindow.h, ...) are not
+    # shipped by the konsole package; clone the matching release tag for them.
+    git clone --depth=1 --branch "v${pkgver}" \
+        https://invent.kde.org/utilities/konsole.git konsole-src
+    sed -i "s/\"Version\": \"[^\"]*\"/\"Version\": \"${pkgver}\"/" \
+        konsole_pasteimageplugin.json
+}
+
+build() {
+    cd "${srcdir}/${pkgname}"
+    cmake -B build -S . \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DKONSOLE_SOURCE_DIR="${PWD}/konsole-src"
+    cmake --build build
+}
+
+package() {
+    cd "${srcdir}/${pkgname}"
+    DESTDIR="${pkgdir}" cmake --install build
+}
