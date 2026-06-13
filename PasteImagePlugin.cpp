@@ -103,6 +103,36 @@ void PasteImagePlugin::doPaste(Konsole::MainWindow *mainWindow)
     const auto &pw = m_windows.value(mainWindow);
     const QMimeData *mime = QGuiApplication::clipboard()->mimeData();
 
+    auto sendTextToTerminal = [&pw](QString text) -> bool {
+        if (!pw.controller || text.isEmpty()) {
+            return false;
+        }
+        if (auto session = pw.controller->session()) {
+            if (auto view = pw.controller->view()) {
+                if (view->bracketedPasteMode()) {
+                    text.prepend(QStringLiteral("\033[200~"));
+                    text.append(QStringLiteral("\033[201~"));
+                }
+            }
+            session->sendTextToTerminal(text, QChar());
+            return true;
+        }
+        return false;
+    };
+
+    auto triggerKonsolePaste = [&pw]() -> bool {
+        if (!pw.controller) {
+            return false;
+        }
+        if (auto *konsolePaste = pw.controller->actionCollection()->action(QStringLiteral("edit_paste"))) {
+            if (konsolePaste->isEnabled()) {
+                konsolePaste->trigger();
+                return true;
+            }
+        }
+        return false;
+    };
+
     if (pw.controller && mime && mime->hasImage()) {
         const QImage img = qvariant_cast<QImage>(mime->imageData());
         if (!img.isNull()) {
@@ -123,20 +153,12 @@ void PasteImagePlugin::doPaste(Konsole::MainWindow *mainWindow)
                     }
                 }
                 if (ok) {
-                    if (auto session = pw.controller->session()) {
-                        // Wrap with bracketed-paste markers when the running
-                        // program enabled DEC mode 2004. Otherwise apps like
-                        // Claude Code's REPL treat the chars as typed input
-                        // rather than a paste event (and miss path-as-image
-                        // auto-attachment).
-                        QString out = path;
-                        if (auto view = pw.controller->view()) {
-                            if (view->bracketedPasteMode()) {
-                                out.prepend(QStringLiteral("\033[200~"));
-                                out.append(QStringLiteral("\033[201~"));
-                            }
-                        }
-                        session->sendTextToTerminal(out, QChar());
+                    // Wrap with bracketed-paste markers when the running
+                    // program enabled DEC mode 2004. Otherwise apps like
+                    // Claude Code's REPL treat the chars as typed input
+                    // rather than a paste event (and miss path-as-image
+                    // auto-attachment).
+                    if (sendTextToTerminal(path)) {
                         return;
                     }
                 }
@@ -144,11 +166,17 @@ void PasteImagePlugin::doPaste(Konsole::MainWindow *mainWindow)
         }
     }
 
-    if (pw.controller) {
-        if (auto *konsolePaste = pw.controller->actionCollection()->action(QStringLiteral("edit_paste"))) {
-            konsolePaste->trigger();
+    if (mime && !mime->hasImage()) {
+        if (triggerKonsolePaste()) {
+            return;
+        }
+        if (mime->hasText()) {
+            sendTextToTerminal(mime->text());
+            return;
         }
     }
+
+    triggerKonsolePaste();
 }
 
 void PasteImagePlugin::sendCtrlV(Konsole::MainWindow *mainWindow)
